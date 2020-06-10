@@ -112,3 +112,6 @@ if [[ ${VERBOSE:-no} == yes ]]; then
   echo
   echo "Blacklisted addresses found: $(wc -l "$IP_BLACKLIST" | cut -d' ' -f1)"
 fi
+
+# Save ipset so ipset-persistent can load it again
+ipset save > /etc/iptables/ipsets
