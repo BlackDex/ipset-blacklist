@@ -45,17 +45,18 @@ if ! ipset list -n|command grep -q "$IPSET_BLACKLIST_NAME"; then
 fi
 
 # create the iptables binding if needed (or abort if does not exists and FORCE=no)
-if ! iptables -nvL INPUT|command grep -q "match-set $IPSET_BLACKLIST_NAME"; then
+if ! iptables -nvL | command grep -q "match-set $IPSET_BLACKLIST_NAME"; then
   # we may also have assumed that INPUT rule n°1 is about packets statistics (traffic monitoring)
   if [[ ${FORCE:-no} != yes ]]; then
-    echo >&2 "Error: iptables does not have the needed ipset INPUT rule, add it using:"
+    echo >&2 "Error: iptables does not have the needed ipset <CHAIN> rule, add it for example by using:"
     echo >&2 "# iptables -I INPUT ${IPTABLES_IPSET_RULE_NUMBER:-1} -m set --match-set $IPSET_BLACKLIST_NAME src -j DROP"
+    echo >&2 "# iptables -I FORWARD ${IPTABLES_IPSET_RULE_NUMBER:-1} -m set --match-set $IPSET_BLACKLIST_NAME src -j DROP"
     exit 1
   fi
-  if ! iptables -I INPUT "${IPTABLES_IPSET_RULE_NUMBER:-1}" -m set --match-set "$IPSET_BLACKLIST_NAME" src -j DROP; then
-    echo >&2 "Error: while adding the --match-set ipset rule to iptables"
-    exit 1
-  fi
+  # if ! iptables -I INPUT "${IPTABLES_IPSET_RULE_NUMBER:-1}" -m set --match-set "$IPSET_BLACKLIST_NAME" src -j DROP; then
+  #   echo >&2 "Error: while adding the --match-set ipset rule to iptables"
+  #   exit 1
+  # fi
 fi
 
 IP_BLACKLIST_TMP=$(mktemp)
@@ -75,7 +76,7 @@ do
 done
 
 # sort -nu does not work as expected
-sed -r -e '/^(0\.0\.0\.0|10\.|127\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[0-1]\.|192\.168\.|22[4-9]\.|23[0-9]\.)/d' "$IP_BLACKLIST_TMP"|sort -n|sort -mu >| "$IP_BLACKLIST"
+sed -r -e '/^(0\.0\.0\.0|10\.|127\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[0-1]\.|192\.168\.|22[4-9]\.|23[0-9]\.)/d' "$IP_BLACKLIST_TMP"| sort -Vu >| "$IP_BLACKLIST"
 if [[ ${DO_OPTIMIZE_CIDR} == yes ]]; then
   if [[ ${VERBOSE:-no} == yes ]]; then
     echo -e "\\nAddresses before CIDR optimization: $(wc -l "$IP_BLACKLIST" | cut -d' ' -f1)"
