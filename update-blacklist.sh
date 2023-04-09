@@ -162,16 +162,20 @@ create "${IPSET_NAME_V4}${IPSET_TMP_NAME_POSTFIX}" -exist hash:net family inet h
 create $IPSET_NAME_V4 -exist hash:net family inet hashsize ${HASHSIZE:-16384} maxelem ${MAXELEM:-65536}
 EOF
 
+sed -E "s/^(.*)$/add ${IPSET_NAME_V4}${IPSET_TMP_NAME_POSTFIX} \\1/p" "$IP_BLACKLIST" >> "$IP_BLACKLIST_RESTORE"
+
+cat >> "$IP_BLACKLIST_RESTORE" <<EOF
+swap $IPSET_NAME_V4 ${IPSET_NAME_V4}${IPSET_TMP_NAME_POSTFIX}
+destroy ${IPSET_NAME_V4}${IPSET_TMP_NAME_POSTFIX}
+EOF
+
 # family = inet6 for IPv6 only
 cat >| "$IP6_BLACKLIST_RESTORE" <<EOF
 create "${IPSET_NAME_V6}${IPSET_TMP_NAME_POSTFIX}" -exist hash:net family inet6 hashsize ${HASHSIZE:-16384} maxelem ${MAXELEM:-65536}
 create $IPSET_NAME_V6 -exist hash:net family inet6 hashsize ${HASHSIZE:-16384} maxelem ${MAXELEM:-65536}
 EOF
 
-cat >> "$IP_BLACKLIST_RESTORE" <<EOF
-swap $IPSET_NAME_V4 ${IPSET_NAME_V4}${IPSET_TMP_NAME_POSTFIX}
-destroy ${IPSET_NAME_V4}${IPSET_TMP_NAME_POSTFIX}
-EOF
+sed -E "s/^(.*)$/add ${IPSET_NAME_V6}${IPSET_TMP_NAME_POSTFIX} \\1/p" "$IP6_BLACKLIST" >> "$IP6_BLACKLIST_RESTORE"
 
 cat >> "$IP6_BLACKLIST_RESTORE" <<EOF
 swap $IPSET_NAME_V6 ${IPSET_NAME_V6}${IPSET_TMP_NAME_POSTFIX}
