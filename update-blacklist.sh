@@ -93,10 +93,6 @@ if ! iptables -nvL | command grep -q "match-set $IPSET_NAME_V4"; then
     echo >&2 "# iptables -I FORWARD ${IPTABLES_IPSET_RULE_NUMBER:-1} -m set --match-set $IPSET_NAME_V4 src -j DROP"
     exit 1
   fi
-  # if ! iptables -I INPUT "${IPTABLES_IPSET_RULE_NUMBER:-1}" -m set --match-set "$IPSET_BLACKLIST_NAME" src -j DROP; then
-  #   echo >&2 "Error: while adding the --match-set ipset rule to iptables"
-  #   exit 1
-  # fi
 fi
 
 # create the iptables binding if needed (or abort if does not exists and FORCE=no)
@@ -108,10 +104,6 @@ if ! ip6tables -nvL | command grep -q "match-set $IPSET_NAME_V6"; then
     echo >&2 "# ip6tables -I FORWARD ${IPTABLES_IPSET_RULE_NUMBER:-1} -m set --match-set $IPSET_NAME_V6 src -j DROP"
     exit 1
   fi
-  # if ! iptables -I INPUT "${IPTABLES_IPSET_RULE_NUMBER:-1}" -m set --match-set "$IPSET_BLACKLIST_NAME" src -j DROP; then
-  #   echo >&2 "Error: while adding the --match-set ipset rule to iptables"
-  #   exit 1
-  # fi
 fi
 
 IP_BLACKLIST_TMP=$(mktemp)
@@ -176,11 +168,6 @@ create "${IPSET_NAME_V6}${IPSET_TMP_NAME_POSTFIX}" -exist hash:net family inet6 
 create $IPSET_NAME_V6 -exist hash:net family inet6 hashsize ${HASHSIZE:-16384} maxelem ${MAXELEM:-65536}
 EOF
 
-# can be IPv4 including netmask notation
-# IPv6 ? -e "s/^([0-9a-f:./]+).*/add $IPSET_TMP_BLACKLIST_NAME \1/p" \ IPv6
-# sed -rn -e '/^#|^$/d' \
-#   -e "s/^([0-9./]+).*/add $IPSET_TMP_BLACKLIST_NAME \\1/p" "$IP_BLACKLIST" >> "$IP_BLACKLIST_RESTORE"
-
 cat >> "$IP_BLACKLIST_RESTORE" <<EOF
 swap $IPSET_NAME_V4 ${IPSET_NAME_V4}${IPSET_TMP_NAME_POSTFIX}
 destroy ${IPSET_NAME_V4}${IPSET_TMP_NAME_POSTFIX}
@@ -200,5 +187,5 @@ if [[ ${VERBOSE:-no} == yes ]]; then
   echo "IPv6 Blacklisted addresses found: $(wc -l "$IP6_BLACKLIST" | cut -d' ' -f1)"
 fi
 
-Save ipset so ipset-persistent can load it again
+# Save ipset so ipset-persistent can load it again
 ipset save > /etc/iptables/ipsets
